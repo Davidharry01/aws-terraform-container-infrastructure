@@ -238,3 +238,125 @@ The image was built using:
 
 docker build -t terraform-project-app .
 
+
+
+\## ECR Authentication Troubleshooting
+
+
+
+While pushing the Docker image to Amazon ECR, I encountered an authentication issue when using the standard AWS-recommended Docker login command:
+
+
+
+```powershell
+
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin <ECR-REGISTRY>
+
+```
+
+
+
+Docker returned:
+
+
+
+```text
+
+400 Bad Request
+
+```
+
+
+
+\### Troubleshooting Performed
+
+
+
+To isolate the issue, I performed several troubleshooting steps:
+
+
+
+\- Verified that the AWS CLI was installed and working.
+
+\- Verified the authenticated AWS identity.
+
+\- Confirmed that the correct AWS region and ECR registry were being used.
+
+\- Confirmed that AWS was successfully generating an ECR authentication password.
+
+\- Verified that Docker Desktop and the Docker daemon were running.
+
+\- Verified the active Docker context.
+
+\- Tested authentication using the default AWS CLI profile.
+
+\- Tested Docker authentication with a clean Docker configuration.
+
+\- Confirmed that the ECR authentication credentials themselves were valid.
+
+
+
+The AWS ECR password was being generated successfully, but Docker authentication continued to return `400 Bad Request` when the password was passed through `--password-stdin` in my Windows PowerShell environment.
+
+
+
+\### Workaround
+
+
+
+I stored the ECR password in a PowerShell variable:
+
+
+
+```powershell
+
+$password = aws ecr get-login-password --region us-east-1
+
+```
+
+
+
+I then authenticated Docker using the generated password directly:
+
+
+
+```powershell
+
+docker login --username AWS --password "$password" <ECR-REGISTRY>
+
+```
+
+
+
+Docker successfully authenticated:
+
+
+
+```text
+
+Login Succeeded
+
+```
+
+
+
+> \*\*Security Note:\*\* `--password-stdin` is the preferred authentication method because passing credentials directly on the command line can expose them through command history or process information. The direct password method was used only as a troubleshooting workaround.
+
+
+
+After successful authentication, I tagged the local Docker image with the ECR repository URI and pushed it to Amazon ECR:
+
+
+
+```powershell
+
+docker tag terraform-project-app:latest <ECR-REPOSITORY-URI>:latest
+
+docker push <ECR-REPOSITORY-URI>:latest
+
+```
+
+
+
+The Docker image was successfully uploaded to Amazon ECR and is ready to be used by Amazon ECS.
+
