@@ -238,7 +238,7 @@ The image was built using:
 
 docker build -t terraform-project-app .
 
-
+```
 
 \## ECR Authentication Troubleshooting
 
